@@ -56,4 +56,4 @@ def build_graph(
 
     # finish at END automatically
     g.add_edge(list(agents)[-1], END)
-    return g.compile(max_concurrency=max_concurrency) 
+    return g.compile() 
