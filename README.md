@@ -36,6 +36,101 @@ langgraph-workflow-template/
     └─ __init__.py
 ```
 
+## Step-by-Step Guide
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/dkataria-chwy/langgraph-template.git
+cd langgraph-template
+```
+
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Understanding the Workflow
+The workflow is defined in `config/workflow.yaml`. This file contains:
+- **Agents:** Each agent is a Python module with an async `run` function.
+- **Edges:** Define the flow between agents.
+- **Entry Point:** The first agent to run.
+
+### 4. Adding a New Agent
+1. **Create a new agent file** in the `agents/` directory. For example, `agents/my_agent.py`:
+   ```python
+   async def run(input_data):
+       # Your agent logic here
+       return {"output": "result"}
+   ```
+
+2. **Update `config/workflow.yaml`** to include the new agent:
+   ```yaml
+   agents:
+     my_agent:
+       module: agents.my_agent
+       func: run
+       outputs: ["output"]
+       inputs: ["input_data"]
+   ```
+
+3. **Wire the agent** in the `edges` section:
+   ```yaml
+   edges:
+     my_agent: []
+   ```
+
+### 5. Running the Workflow
+- **CLI:** Run the workflow with a customer ID:
+  ```bash
+  python run_once.py CUST-12345
+  ```
+
+- **Dash App:** Start the Dash app and use the button to run the workflow:
+  ```bash
+  python dash_app.py
+  ```
+
+### 6. Debugging
+Debug individual agents by running them directly:
+```bash
+python -m agents.my_agent
+```
+
+## Rules to Follow
+- **Never edit `workflow_core/` files:** These files are the core orchestration logic and should not be modified.
+- **Keep `outputs:` keys unique:** Unless you want parallel branches writing to the same key (then add a reducer manually in code).
+- **All tasks run with async I/O:** Long API calls won't block other nodes.
+- **Agents can return any serializable value:** Markdown, JSON, dict, string, file path—anything serializable.
+- **Environment variables:** Expose anything agents need (e.g. OPENAI_API_KEY, FAST_API_URL) in the shell or Dash secrets.
+
+## Example: Updating the YAML
+Here's an example of how to update the `workflow.yaml` file to add a new agent:
+
+### Before:
+```yaml
+agents:
+  belief:
+    module: agents.belief
+    func: run
+    outputs: ["belief_md"]
+    inputs: ["customer_id"]
+```
+
+### After Adding a New Agent:
+```yaml
+agents:
+  belief:
+    module: agents.belief
+    func: run
+    outputs: ["belief_md"]
+    inputs: ["customer_id"]
+  my_agent:
+    module: agents.my_agent
+    func: run
+    outputs: ["output"]
+    inputs: ["input_data"]
+```
+
 ## User Manual
 | Step                  | What non-coder does                                                                 | File(s)                |
 |-----------------------|-------------------------------------------------------------------------------------|------------------------|
@@ -46,17 +141,6 @@ langgraph-workflow-template/
 | Run manually          | `python run_once.py <customer_id>`                                                  | CLI or cron            |
 | Run via Dash          | (already wired) – user clicks the button                                            | dash_app.py            |
 | Environment vars      | Expose anything agents need (e.g. OPENAI_API_KEY, FAST_API_URL) in the shell or Dash secrets. | –                      |
-
-## Example: Add a New Agent
-1. Create `agents/my_agent.py` with an async `run` function.
-2. Add a block to `config/workflow.yaml` under `agents:` and wire it in `edges:`.
-3. No Python code changes required.
-
-## Debugging
-Debug individual agents by running them directly:
-```
-python -m agents.observation DEMO-CUST
-```
 
 ## Requirements
 - Python 3.8+
