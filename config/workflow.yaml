@@ -1,0 +1,62 @@
+# ✨ Edit ONLY this file to change agents or edges.
+# Every agent block:
+#   module   – dotted import path to the Python file.
+#   func     – function inside module (async def).
+#   outputs  – list of state keys it writes.
+#   inputs   – list of state keys it reads (order matters).
+
+agents:
+  # 1 ▸ Belief  ▬▬▬► returns Markdown summary
+  belief:
+    module : agents.belief
+    func   : run
+    outputs: ["belief_md"]
+    inputs : ["customer_id"]
+
+  # 2 ▸ Observation (runs in parallel with interpretation)
+  observation:
+    module : agents.observation
+    func   : run
+    outputs: ["obs_md"]
+    inputs : ["customer_id"]
+
+  # 3 ▸ Interpretation
+  interpretation:
+    module : agents.interpretation
+    func   : run
+    outputs: ["interp_md"]
+    inputs : ["customer_id"]
+
+  # 4 ▸ Insight (combines two .md strings)
+  insight:
+    module : agents.insight
+    func   : run
+    outputs: ["insights_md"]
+    inputs : ["obs_md", "interp_md"]
+
+  # 5 ▸ Hypothesis (returns text/JSON)
+  hypothesis:
+    module : agents.hypothesis
+    func   : run
+    outputs: ["hypothesis"]
+    inputs : ["insights_md"]
+
+  # 6 ▸ Recommendation (returns text/JSON)
+  recommendation:
+    module : agents.recommendation
+    func   : run
+    outputs: ["recommendations"]
+    inputs : ["hypothesis"]
+
+edges:
+  # fan-out
+  belief: [observation, interpretation]
+  # fan-in
+  observation: [insight]
+  interpretation: [insight]
+  # sequential tail
+  insight: [hypothesis]
+  hypothesis: [recommendation]
+
+entry: belief            # first node in the graph
+max_concurrency: 6       # parallel tasks allowed 
